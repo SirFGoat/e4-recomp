@@ -75,4 +75,6 @@ cmake --build "$ROOT/out/build/$GAME_PRESET" --parallel "$JOBS"
 
 echo
 echo "Built: $ROOT/out/build/$GAME_PRESET/e4  (+ e4_launcher)"
+# Package into E4.app + a drag-to-install E4.dmg (contains your game files: own Macs only).
+bash "$ROOT/make_mac_app.sh" "$CONFIG"
 echo "Run:   $ROOT/run_e4.sh   or   $ROOT/out/build/$GAME_PRESET/e4_launcher"

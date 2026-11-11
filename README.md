@@ -61,6 +61,13 @@ Install Xcode 16+ (or its Command Line Tools), then `brew install cmake ninja`, 
 bash E4/e4recomp/build_mac.sh
 ```
 
+The build ends with `e4recomp/out/E4.dmg`. Open it and drag **E4** onto **Applications**.
+The app carries your game files (and HD textures, if you made any), so keep the `.app` /
+`.dmg` to your own Macs and don't share them. Settings and logs are kept in
+`~/Library/Application Support/E4`, so installing a newer build keeps them. On a Mac other
+than the one that built it, right-click E4 and choose **Open** the first time (the app is
+not notarised).
+
 On Apple Silicon, resolution scale 2 is recommended.
 
 ## 3. Play

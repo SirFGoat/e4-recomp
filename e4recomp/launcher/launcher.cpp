@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <cctype>
@@ -119,7 +120,8 @@ const ResOption kResolutions[] = {
 };
 
 fs::path BaseDir();
-fs::path SettingsPath() { return BaseDir() / "e4_launcher.ini"; }
+fs::path DataDir();
+fs::path SettingsPath() { return DataDir() / "e4_launcher.ini"; }
 
 void Load(Settings& s) {
   std::ifstream in(SettingsPath());
@@ -209,6 +211,31 @@ fs::path BaseDir() {
   return fs::current_path(ec);
 }
 
+// Inside a macOS app bundle (E4.app/Contents/MacOS)?
+bool InAppBundle() {
+#ifdef __APPLE__
+  const fs::path base = BaseDir();
+  return base.filename() == "MacOS" && base.parent_path().filename() == "Contents";
+#else
+  return false;
+#endif
+}
+
+// Where settings, logs and recordings go: next to the launcher, except in an installed
+// macOS app (read-only, replaced on update), where they go to
+// ~/Library/Application Support/E4.
+fs::path DataDir() {
+  if (InAppBundle()) {
+    if (const char* home = std::getenv("HOME")) {
+      fs::path dir = fs::path(home) / "Library" / "Application Support" / "E4";
+      std::error_code ec;
+      fs::create_directories(dir, ec);
+      if (!ec) return dir;
+    }
+  }
+  return BaseDir();
+}
+
 fs::path GameExe() {
 #ifdef _WIN32
   return BaseDir() / "e4.exe";
@@ -237,10 +264,16 @@ std::optional<fs::path> FindUp(const char* name, bool (*valid)(const fs::path&))
 }
 
 void AutoDetect(Settings& s) {
+  std::error_code ec;
+  if (InAppBundle()) {
+    // The app bundle carries its own game files (and any HD textures) in Resources.
+    const fs::path res = BaseDir().parent_path() / "Resources";
+    if (IsGameDir(res / "game")) s.game_dir = U8(res / "game");
+    if (fs::is_directory(res / "textures", ec)) s.texture_dir = U8(res / "textures");
+  }
   if (s.game_dir.empty() || !IsGameDir(FromU8(s.game_dir))) {
     if (auto p = FindUp("game", IsGameDir)) s.game_dir = U8(*p);
   }
-  std::error_code ec;
   if (s.texture_dir.empty() || !fs::is_directory(FromU8(s.texture_dir), ec)) {
     if (auto p = FindUp("textures", nullptr)) s.texture_dir = U8(*p);
   }
@@ -323,7 +356,7 @@ std::vector<std::string> BuildArgs(const Settings& s) {
   // Tap monitor: record the game's beat, the music as heard and controller taps
   // (sync_beat.csv / sync_audio.csv / sync_taps.csv next to e4) for checking the sync.
   a.push_back(flag("sync_record", "true"));
-  a.push_back(flag("log_file", U8(BaseDir() / "e4_last_run.log")));
+  a.push_back(flag("log_file", U8(DataDir() / "e4_last_run.log")));
   return a;
 }
 
@@ -335,7 +368,7 @@ SDL_Process* Launch(const Settings& s, std::string& error) {
 
   SDL_PropertiesID props = SDL_CreateProperties();
   SDL_SetPointerProperty(props, SDL_PROP_PROCESS_CREATE_ARGS_POINTER, argv.data());
-  std::string wd = U8(BaseDir());
+  std::string wd = U8(DataDir());  // recordings (sync_*.csv) land here
   SDL_SetStringProperty(props, SDL_PROP_PROCESS_CREATE_WORKING_DIRECTORY_STRING, wd.c_str());
   SDL_SetBooleanProperty(props, SDL_PROP_PROCESS_CREATE_BACKGROUND_BOOLEAN, true);
   SDL_Process* proc = SDL_CreateProcessWithProperties(props);
@@ -498,6 +531,12 @@ int main(int argc, char** argv) {
   init_info.ColorTargetFormat = SDL_GetGPUSwapchainTextureFormat(gpu, window);
   init_info.MSAASamples = SDL_GPU_SAMPLECOUNT_1;
   ImGui_ImplSDLGPU3_Init(&init_info);
+
+  // Files the launcher writes itself (calibration_log.csv) go to the data folder too.
+  {
+    std::error_code ec;
+    fs::current_path(DataDir(), ec);
+  }
 
   Settings s;
   Load(s);
