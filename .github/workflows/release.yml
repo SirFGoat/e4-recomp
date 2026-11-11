@@ -67,9 +67,6 @@ jobs:
       - name: Toolchain
         run: brew install ninja
 
-      - name: Apply MoltenVK patch
-        run: git -C tools/rexglue-sdk-src/thirdparty/moltenvk apply ../../patches/moltenvk.patch
-
       - name: Build SDK
         run: |
           cmake --preset mac-arm64 -S tools/rexglue-sdk-src -DREXGLUE_BUILD_TESTS=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=13.3
