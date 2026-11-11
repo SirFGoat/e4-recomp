@@ -65,10 +65,20 @@ struct Settings {
   // How far the beat bar / beat timing runs behind the game's music clock so it lines up
   // with the music as heard (e4_beat_offset_ms).
   int beat_offset = 0;
+  // Audio buffering (ini only). audio_queue_frames: game audio frames (5.3 ms each) queued
+  // ahead of the speakers. music_decode_ahead_ms: music decoded ahead of the game's mixer
+  // (0 = the decoder's whole output ring, ~130 ms). Low values cut latency but starve if
+  // the audio threads aren't scheduled promptly: on macOS the 2 / 10 ms used on Windows
+  // made the music run dry over and over (slow, stretched, robotic sound), so the Mac
+  // uses the engine's defaults.
+#ifdef __APPLE__
+  int audio_queue_frames = 8;
+  int music_decode_ahead_ms = 0;
+#else
+  int audio_queue_frames = 2;
+  int music_decode_ahead_ms = 10;
+#endif
 };
-
-// Music decoder lead (xma_decode_ahead_ms): decoded audio kept ahead of the game's mixer.
-constexpr int kXmaDecodeAheadMs = 10;
 
 // Gamertag rules from the 360: 1-15 letters, digits and spaces.
 std::string CleanName(const std::string& in) {
@@ -150,6 +160,10 @@ void Load(Settings& s) {
   // "beat_offset" / "beat_offset_ms" keys held whole-offset estimates, so they are not read.
   i("beat_fine_ms", s.beat_offset);
   s.beat_offset = std::clamp(s.beat_offset, -150, 150);
+  i("audio_queue_frames", s.audio_queue_frames);
+  s.audio_queue_frames = std::clamp(s.audio_queue_frames, 2, 64);
+  i("music_decode_ahead_ms", s.music_decode_ahead_ms);
+  s.music_decode_ahead_ms = std::clamp(s.music_decode_ahead_ms, 0, 1000);
   if (kv.count("game_dir")) s.game_dir = kv["game_dir"];
   if (kv.count("texture_dir")) s.texture_dir = kv["texture_dir"];
   if (kv.count("player_name")) s.player_name = CleanName(kv["player_name"]);
@@ -178,7 +192,9 @@ void Save(const Settings& s) {
       << "player_name=" << s.player_name << "\n"
       << "player_id=" << s.player_id << "\n"
       << "player_key=" << s.player_key << "\n"
-      << "beat_fine_ms=" << s.beat_offset << "\n";
+      << "beat_fine_ms=" << s.beat_offset << "\n"
+      << "audio_queue_frames=" << s.audio_queue_frames << "\n"
+      << "music_decode_ahead_ms=" << s.music_decode_ahead_ms << "\n";
 }
 
 // ---------------------------------------------------------------------------
@@ -346,12 +362,10 @@ std::vector<std::string> BuildArgs(const Settings& s) {
   a.push_back(flag("e4_player_token", s.player_key));
   // The game only opens its leaderboard menus when signed in to Xbox LIVE.
   a.push_back(flag("user_signin_live", "true"));
-  // 2 queued audio frames (~11 ms) instead of the engine's 8 (~43 ms): the sound comes
-  // out as soon after the game's beat as the audio device allows.
-  a.push_back(flag("audio_maxqframes", "2"));
-  // Music decoded only ~10 ms ahead of the game's mixer (the engine default fills the
-  // decoder's whole output ring, ~130 ms for the music layers).
-  a.push_back(flag("xma_decode_ahead_ms", std::to_string(kXmaDecodeAheadMs)));
+  // Audio buffering (see Settings): on Windows 2 frames (~11 ms) and music ~10 ms ahead,
+  // so the sound comes out as soon after the game's beat as the device allows.
+  a.push_back(flag("audio_maxqframes", std::to_string(s.audio_queue_frames)));
+  a.push_back(flag("xma_decode_ahead_ms", std::to_string(s.music_decode_ahead_ms)));
   a.push_back(flag("e4_beat_offset_ms", std::to_string(s.beat_offset)));
   // Tap monitor: record the game's beat, the music as heard and controller taps
   // (sync_beat.csv / sync_audio.csv / sync_taps.csv next to e4) for checking the sync.
