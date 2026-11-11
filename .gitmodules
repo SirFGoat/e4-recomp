@@ -1,0 +1,66 @@
+[submodule "tools/rexglue-sdk-src/thirdparty/libmspack"]
+	path = tools/rexglue-sdk-src/thirdparty/libmspack
+	url = https://github.com/kyz/libmspack.git
+[submodule "tools/rexglue-sdk-src/thirdparty/glslang"]
+	path = tools/rexglue-sdk-src/thirdparty/glslang
+	url = https://github.com/KhronosGroup/glslang.git
+[submodule "tools/rexglue-sdk-src/thirdparty/FFmpeg"]
+	path = tools/rexglue-sdk-src/thirdparty/FFmpeg
+	url = https://github.com/wmarti/FFmpeg.git
+[submodule "tools/rexglue-sdk-src/thirdparty/tomlplusplus"]
+	path = tools/rexglue-sdk-src/thirdparty/tomlplusplus
+	url = https://github.com/marzer/tomlplusplus.git
+[submodule "tools/rexglue-sdk-src/thirdparty/simde"]
+	path = tools/rexglue-sdk-src/thirdparty/simde
+	url = https://github.com/simd-everywhere/simde.git
+[submodule "tools/rexglue-sdk-src/thirdparty/xxHash"]
+	path = tools/rexglue-sdk-src/thirdparty/xxHash
+	url = https://github.com/Cyan4973/xxHash.git
+[submodule "tools/rexglue-sdk-src/thirdparty/spdlog"]
+	path = tools/rexglue-sdk-src/thirdparty/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "tools/rexglue-sdk-src/thirdparty/fmt"]
+	path = tools/rexglue-sdk-src/thirdparty/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "tools/rexglue-sdk-src/thirdparty/catch2"]
+	path = tools/rexglue-sdk-src/thirdparty/catch2
+	url = https://github.com/catchorg/Catch2.git
+[submodule "tools/rexglue-sdk-src/thirdparty/utfcpp"]
+	path = tools/rexglue-sdk-src/thirdparty/utfcpp
+	url = https://github.com/nemtrif/utfcpp.git
+[submodule "tools/rexglue-sdk-src/thirdparty/vulkan-headers"]
+	path = tools/rexglue-sdk-src/thirdparty/vulkan-headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "tools/rexglue-sdk-src/thirdparty/vulkan-loader"]
+	path = tools/rexglue-sdk-src/thirdparty/vulkan-loader
+	url = https://github.com/KhronosGroup/Vulkan-Loader.git
+[submodule "tools/rexglue-sdk-src/thirdparty/moltenvk"]
+	path = tools/rexglue-sdk-src/thirdparty/moltenvk
+	url = https://github.com/KhronosGroup/MoltenVK.git
+[submodule "tools/rexglue-sdk-src/thirdparty/vulkan-memory-allocator"]
+	path = tools/rexglue-sdk-src/thirdparty/vulkan-memory-allocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "tools/rexglue-sdk-src/thirdparty/imgui"]
+	path = tools/rexglue-sdk-src/thirdparty/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "tools/rexglue-sdk-src/thirdparty/spirv-tools"]
+	path = tools/rexglue-sdk-src/thirdparty/spirv-tools
+	url = https://github.com/KhronosGroup/SPIRV-Tools.git
+[submodule "tools/rexglue-sdk-src/thirdparty/spirv-headers"]
+	path = tools/rexglue-sdk-src/thirdparty/spirv-headers
+	url = https://github.com/KhronosGroup/SPIRV-Headers.git
+[submodule "tools/rexglue-sdk-src/thirdparty/cli11"]
+	path = tools/rexglue-sdk-src/thirdparty/cli11
+	url = https://github.com/CLIUtils/CLI11
+[submodule "tools/rexglue-sdk-src/thirdparty/o1heap"]
+	path = tools/rexglue-sdk-src/thirdparty/o1heap
+	url = https://github.com/pavel-kirienko/o1heap.git
+[submodule "tools/rexglue-sdk-src/thirdparty/sdl3"]
+	path = tools/rexglue-sdk-src/thirdparty/sdl3
+	url = https://github.com/libsdl-org/SDL
+[submodule "tools/rexglue-sdk-src/thirdparty/inja"]
+	path = tools/rexglue-sdk-src/thirdparty/inja
+	url = https://github.com/pantor/inja.git
+[submodule "tools/rexglue-sdk-src/thirdparty/tracy"]
+	path = tools/rexglue-sdk-src/thirdparty/tracy
+	url = https://github.com/wolfpld/tracy.git

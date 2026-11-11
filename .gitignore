@@ -1,0 +1,20 @@
+# Game data: bring your own (see README.md)
+/game/*
+!/game/README.md
+/textures/*
+!/textures/README.md
+/package/
+
+# Recompiled game code (generated from your default.xex) and build output
+/e4recomp/generated/
+/e4recomp/out/
+/tools/rexglue-sdk-src/out/
+
+# Runtime files
+*.log
+sync_*.csv
+calibration_log.csv
+e4_launcher.ini
+__pycache__/
+*.pyc
+.DS_Store
