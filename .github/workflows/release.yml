@@ -1,0 +1,112 @@
+# Builds the E4 builder kits (Windows + Apple Silicon Mac) and attaches them to a GitHub
+# release. The kits hold the pre-built SDK, the E4 sources and the builder scripts - no
+# game data; players add their own game zip and the kit recompiles it on their machine.
+#
+# Push a tag like v1.0.0 to publish a release; "Run workflow" builds the kits as
+# downloadable artifacts only.
+name: Release builder kits
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Toolchain
+        run: choco install llvm ninja -y --no-progress
+
+      - name: Build SDK
+        shell: pwsh
+        run: |
+          $env:Path = "C:\Program Files\LLVM\bin;$env:Path"
+          clang++ --version
+          cmake --preset win-amd64 -S tools/rexglue-sdk-src -DREXGLUE_BUILD_TESTS=OFF
+          if ($LASTEXITCODE) { exit 1 }
+          cmake --build tools/rexglue-sdk-src/out/build/win-amd64 --config Release --parallel
+          if ($LASTEXITCODE) { exit 1 }
+          cmake --install tools/rexglue-sdk-src/out/build/win-amd64 --config Release
+          if ($LASTEXITCODE) { exit 1 }
+
+      - name: Build extractor
+        shell: pwsh
+        run: |
+          $env:Path = "C:\Program Files\LLVM\bin;$env:Path"
+          clang++ -std=c++17 -O2 -fms-runtime-lib=static e4recomp/builder/e4_extract.cpp -o e4_extract.exe
+          if ($LASTEXITCODE) { exit 1 }
+
+      - name: Assemble kit
+        shell: bash
+        run: bash e4recomp/builder/assemble_kit.sh windows tools/rexglue-sdk-src/out/install/win-amd64 e4_extract.exe dist/E4-Builder-Windows
+
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path dist/E4-Builder-Windows -DestinationPath E4-Builder-Windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: E4-Builder-Windows
+          path: E4-Builder-Windows.zip
+
+  mac:
+    runs-on: macos-latest  # Apple Silicon
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Toolchain
+        run: brew install ninja
+
+      - name: Apply MoltenVK patch
+        run: git -C tools/rexglue-sdk-src/thirdparty/moltenvk apply ../../patches/moltenvk.patch
+
+      - name: Build SDK
+        run: |
+          cmake --preset mac-arm64 -S tools/rexglue-sdk-src -DREXGLUE_BUILD_TESTS=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=13.3
+          cmake --build tools/rexglue-sdk-src/out/build/mac-arm64 --config Release --parallel
+          cmake --install tools/rexglue-sdk-src/out/build/mac-arm64 --config Release
+
+      - name: Build extractor
+        run: clang++ -std=c++17 -O2 -mmacosx-version-min=13.0 e4recomp/builder/e4_extract.cpp -o e4_extract
+
+      - name: Assemble kit
+        run: bash e4recomp/builder/assemble_kit.sh mac tools/rexglue-sdk-src/out/install/mac-arm64 e4_extract dist/E4-Builder-macOS
+
+      - name: Zip
+        run: ditto -c -k --keepParent dist/E4-Builder-macOS E4-Builder-macOS.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: E4-Builder-macOS
+          path: E4-Builder-macOS.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, mac]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: kits
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" kits/*.zip \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "E4 ${GITHUB_REF_NAME}" \
+            --notes "Download the kit for your computer, put your own E4 Xbox Live Arcade zip next to **Build E4**, and run it. It recompiles the game on your machine and gives you a ready-to-play E4 (an E4 folder on Windows, a drag-to-install E4.dmg on Mac). See README.txt in the kit. No game data is included.
+
+          - **E4-Builder-Windows.zip** - Windows 10/11, 64-bit
+          - **E4-Builder-macOS.zip** - Macs with Apple Silicon (M1 or newer), macOS 13+"
