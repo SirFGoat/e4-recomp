@@ -30,11 +30,12 @@ echo "=== Making E4.app ==="
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-# Binaries and their libraries, in the same layout as the build folder (the game finds
-# librexruntime and the Vulkan/MoltenVK runtime next to itself).
+# Binaries and their libraries (the game finds librexruntime next to itself). The
+# Vulkan/MoltenVK runtime goes in Contents/Resources/vulkan, which the game also searches:
+# codesign rejects non-code folders (its share/ ICD json) inside Contents/MacOS.
 cp "$BUILD/e4" "$BUILD/e4_launcher" "$APP/Contents/MacOS/"
 find "$BUILD" -maxdepth 1 -name '*.dylib' -exec cp {} "$APP/Contents/MacOS/" \;
-[ -d "$BUILD/vulkan" ] && cp -R "$BUILD/vulkan" "$APP/Contents/MacOS/"
+[ -d "$BUILD/vulkan" ] && cp -R "$BUILD/vulkan" "$APP/Contents/Resources/vulkan"
 
 # Game files and HD textures (the launcher looks in Contents/Resources first).
 cp -R "$GAME" "$APP/Contents/Resources/game"
@@ -82,8 +83,11 @@ $( [ $HAS_ICON = 1 ] && echo '  <key>CFBundleIconFile</key><string>E4</string>' 
 </plist>
 PLIST
 
-# Ad-hoc signature: required for Apple Silicon, and keeps the bundle consistent.
-codesign --force --deep --sign - "$APP" >/dev/null
+# Ad-hoc signature: required for Apple Silicon. Libraries first (inside out), then the
+# executables and the bundle.
+find "$APP/Contents" -name '*.dylib' -type f -exec codesign --force --sign - {} \; 2>/dev/null
+codesign --force --sign - "$APP/Contents/MacOS/e4"
+codesign --force --sign - "$APP"
 echo "Made $APP"
 
 echo "=== Making E4.dmg ==="
